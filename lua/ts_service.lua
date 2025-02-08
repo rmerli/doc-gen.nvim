@@ -22,12 +22,26 @@ local function get_lines_in_node_range(node)
   return table.concat(lines, "\n")
 end
 
+local function replace_function_comment(replacement)
+  local sibling = M.node:prev_sibling()
+
+  if not sibling or sibling:type() ~= "comment" then
+    local start_row, _ = M.node:start()
+    vim.fn.append(start_row, replacement)
+    return
+  end
+
+  local start_row, _, end_row, _ = sibling:range()
+
+  vim.api.nvim_buf_set_lines(0, start_row, end_row + 1, true, replacement)
+end
+
 function M.set_text_before_node(text)
-  local start_row, _ = M.node:start()
-  vim.fn.append(start_row, vim.split(text, "\n"))
+  replace_function_comment(vim.split(text, "\n"))
 end
 
 function M.get_node_text()
+  vim.treesitter.get_parser(0):parse()
   local node = get_ts_node()
 
   if not node then
